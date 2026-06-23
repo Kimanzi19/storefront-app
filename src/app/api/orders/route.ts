@@ -7,7 +7,7 @@ import { z } from 'zod';
 const CartItemSchema = z.object({
   product: z.object({ id: z.string().uuid() }).passthrough(),
   quantity: z.number().int().positive(),
-  selectedVariants: z.record(z.string()).optional().default({})
+  selectedVariants: z.record(z.string(), z.string()).optional().default({})
 });
 
 const OrderPayloadSchema = z.object({
