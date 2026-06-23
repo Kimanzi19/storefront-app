@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Storefront | WhatsApp E-Commerce Platform",
+  title: "Storefront Ke",
   description: "Create your digital storefront and accept orders via WhatsApp instantly.",
 };
 
