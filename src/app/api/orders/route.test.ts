@@ -9,16 +9,24 @@ vi.mock('@/lib/supabase', () => ({
     select: vi.fn().mockReturnThis(),
     in: vi.fn().mockResolvedValue({
       data: [
-        { id: 'prod-1', price: 100, variants: [] }
+        { id: '770e8400-e29b-41d4-a716-446655440000', price: 100, variants: [] }
       ],
       error: null
     })
   }
 }));
 
-const mockInsert = vi.fn().mockResolvedValue({
-  data: [{ id: 'order-1' }],
+const mockSingle = vi.fn().mockResolvedValue({
+  data: { id: 'order-1' },
   error: null
+});
+
+const mockSelect = vi.fn().mockReturnValue({
+  single: mockSingle
+});
+
+const mockInsert = vi.fn().mockReturnValue({
+  select: mockSelect
 });
 
 vi.mock('@/lib/supabaseAdmin', () => ({
@@ -43,6 +51,7 @@ describe('POST /api/orders', () => {
     const response = await POST(request);
     expect(response.status).toBe(400);
     const data = await response.json();
+    console.log('400 DATA:', data);
     expect(data.success).toBe(false);
     expect(data.error).toBeDefined();
   });
@@ -52,12 +61,12 @@ describe('POST /api/orders', () => {
     const request = new NextRequest('http://localhost/api/orders', {
       method: 'POST',
       body: JSON.stringify({
-        vendor_id: 'vendor-1',
+        vendor_id: '550e8400-e29b-41d4-a716-446655440000',
         customer_name: 'John Doe',
         delivery_location: 'Nairobi',
         total_price: 50, 
         items_json: [
-          { product: { id: 'prod-1' }, quantity: 1, selectedVariants: {} }
+          { product: { id: '770e8400-e29b-41d4-a716-446655440000' }, quantity: 1, selectedVariants: {} }
         ]
       })
     });
