@@ -353,14 +353,24 @@ export default function DashboardPage() {
           <div className="card glass" style={{ padding: '1.5rem', marginBottom: '2rem' }}>
             <h3 style={{ fontWeight: 'bold', marginBottom: '1rem' }}>Add New Product</h3>
         <form onSubmit={handleAddProduct} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-            <input className="input" style={{ flex: '1 1 200px' }} placeholder="Product Title" required value={newTitle} onChange={(e) => setNewTitle(e.target.value)} />
-            <input type="number" className="input" style={{ flex: '0 1 100px' }} placeholder="Price (KES)" required value={newPrice} onChange={(e) => setNewPrice(e.target.value)} />
-            <input type="number" min="1" className="input" style={{ flex: '0 1 140px' }} placeholder="Min. Order Qty" value={newMinQuantity} onChange={(e) => setNewMinQuantity(e.target.value)} title="Minimum order quantity (defaults to 1)" />
+          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+            <div style={{ flex: '1 1 200px' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.3rem', fontWeight: 'bold' }}>Product Title *</label>
+              <input className="input" style={{ width: '100%' }} placeholder="e.g. Beef Samosas, Birthday Cake" required value={newTitle} onChange={(e) => setNewTitle(e.target.value)} />
+            </div>
+            <div style={{ flex: '0 1 130px' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.3rem', fontWeight: 'bold' }}>Price (KES) *</label>
+              <input type="number" className="input" style={{ width: '100%' }} placeholder="50" required value={newPrice} onChange={(e) => setNewPrice(e.target.value)} />
+            </div>
+            <div style={{ flex: '0 1 160px' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', color: '#eab308', marginBottom: '0.3rem', fontWeight: 'bold' }}>Min. Order (MOQ) *</label>
+              <input type="number" min="1" className="input" style={{ width: '100%', borderColor: 'rgba(234, 179, 8, 0.4)' }} placeholder="1" value={newMinQuantity} onChange={(e) => setNewMinQuantity(e.target.value)} title="Minimum order quantity (e.g. 10 for samosas, defaults to 1)" />
+            </div>
           </div>
           
           <div>
-            <input className="input" placeholder="Category (e.g. Sneakers, Cakes)" required value={newCategory} onChange={(e) => setNewCategory(e.target.value)} />
+            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.3rem', fontWeight: 'bold' }}>Category *</label>
+            <input className="input" style={{ width: '100%' }} placeholder="e.g. Sneakers, Cakes, Pastries" required value={newCategory} onChange={(e) => setNewCategory(e.target.value)} />
             {Array.from(new Set(products.map(p => p.category).filter(Boolean))).length > 0 && (
               <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>Previous:</span>
@@ -373,7 +383,10 @@ export default function DashboardPage() {
             )}
           </div>
           
-          <textarea className="input" placeholder="Product Description..." style={{ minHeight: '80px', resize: 'vertical' }} value={newDescription} onChange={(e) => setNewDescription(e.target.value)} />
+          <div>
+            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.3rem', fontWeight: 'bold' }}>Product Description</label>
+            <textarea className="input" placeholder="Describe your product..." style={{ minHeight: '80px', resize: 'vertical', width: '100%' }} value={newDescription} onChange={(e) => setNewDescription(e.target.value)} />
+          </div>
           
           <div>
             <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.5rem' }}>Product Images (can select multiple)</label>
