@@ -6,7 +6,7 @@ import { User } from '@supabase/supabase-js';
 import { Plus, Trash2, Check, Package, CheckCircle, Clock } from 'lucide-react';
 
 type VariantType = 'Clothing Size' | 'Shoe Size' | 'Color' | 'Material' | 'Custom';
-type TabType = 'Products' | 'Orders' | 'History';
+type TabType = 'Products' | 'Orders' | 'History' | 'Settings';
 
 interface StructuredVariant {
   type: VariantType;
@@ -47,6 +47,16 @@ export default function DashboardPage() {
   const [variants, setVariants] = useState<StructuredVariant[]>([]);
   const [customInputs, setCustomInputs] = useState<Record<number, string>>({});
 
+  // Settings Form State
+  const [editStoreName, setEditStoreName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editHandle, setEditHandle] = useState('');
+  const [updatingProfile, setUpdatingProfile] = useState(false);
+  
+  // Danger Zone Deletion State
+  const [deleteConfirmHandle, setDeleteConfirmHandle] = useState('');
+  const [deletingAccount, setDeletingAccount] = useState(false);
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -65,6 +75,9 @@ export default function DashboardPage() {
         
       if (profile) {
         setVendorProfile(profile);
+        setEditStoreName(profile.store_name || '');
+        setEditPhone(profile.phone_number || '');
+        setEditHandle(profile.handle || '');
         
         const { data: prods } = await supabase
           .from('products')
@@ -103,6 +116,66 @@ export default function DashboardPage() {
     } else if (data) {
       setVendorProfile(data);
     }
+  };
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    setUpdatingProfile(true);
+
+    try {
+      const res = await fetch('/api/vendor/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vendor_id: user.id,
+          store_name: editStoreName,
+          phone_number: editPhone,
+          handle: editHandle
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('Store profile updated successfully!');
+        fetchData();
+      } else {
+        alert(JSON.stringify(data.error || 'Failed to update profile'));
+      }
+    } catch (err: any) {
+      alert(err.message);
+    }
+    setUpdatingProfile(false);
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user || !vendorProfile) return;
+    if (deleteConfirmHandle !== vendorProfile.handle) {
+      alert(`Please type "${vendorProfile.handle}" exactly to confirm deletion.`);
+      return;
+    }
+
+    if (!confirm('Are you absolutely sure you want to delete your store and account? This action cannot be undone.')) {
+      return;
+    }
+
+    setDeletingAccount(true);
+    try {
+      const res = await fetch('/api/vendor/profile', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vendor_id: user.id })
+      });
+      const data = await res.json();
+      if (data.success) {
+        await supabase.auth.signOut();
+        window.location.href = '/';
+      } else {
+        alert('Failed to delete account: ' + (data.error || 'Unknown error'));
+      }
+    } catch (err: any) {
+      alert(err.message);
+    }
+    setDeletingAccount(false);
   };
 
   const handleAddVariant = () => {
@@ -345,6 +418,12 @@ export default function DashboardPage() {
           style={{ padding: '0.75rem 1rem', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold', color: activeTab === 'History' ? 'var(--primary)' : 'var(--text-muted)', borderBottom: activeTab === 'History' ? '2px solid var(--primary)' : '2px solid transparent' }}
         >
           History
+        </button>
+        <button 
+          onClick={() => setActiveTab('Settings')} 
+          style={{ padding: '0.75rem 1rem', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold', color: activeTab === 'Settings' ? 'var(--primary)' : 'var(--text-muted)', borderBottom: activeTab === 'Settings' ? '2px solid var(--primary)' : '2px solid transparent' }}
+        >
+          Settings
         </button>
       </div>
 
@@ -691,6 +770,68 @@ export default function DashboardPage() {
                 ))
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'Settings' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', maxWidth: '600px' }}>
+          <div className="card glass" style={{ padding: '1.5rem' }}>
+            <h3 style={{ fontWeight: 'bold', fontSize: '1.2rem', marginBottom: '1rem' }}>Edit Store Profile</h3>
+            <form onSubmit={handleUpdateProfile} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.3rem', fontWeight: 'bold' }}>Store Name *</label>
+                <input className="input" style={{ width: '100%' }} required value={editStoreName} onChange={(e) => setEditStoreName(e.target.value)} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.3rem', fontWeight: 'bold' }}>Store Handle (URL) *</label>
+                <input className="input" style={{ width: '100%' }} required value={editHandle} onChange={(e) => setEditHandle(e.target.value)} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.3rem', fontWeight: 'bold' }}>Phone Number *</label>
+                <input className="input" style={{ width: '100%' }} required value={editPhone} onChange={(e) => setEditPhone(e.target.value)} />
+              </div>
+              <button type="submit" disabled={updatingProfile} className="btn btn-primary" style={{ alignSelf: 'flex-start', padding: '0.6rem 1.5rem', marginTop: '0.5rem' }}>
+                {updatingProfile ? 'Saving...' : 'Save Changes'}
+              </button>
+            </form>
+          </div>
+
+          {/* Danger Zone */}
+          <div className="card" style={{ padding: '1.5rem', border: '1px solid rgba(239, 68, 68, 0.4)', backgroundColor: 'rgba(239, 68, 68, 0.05)' }}>
+            <h3 style={{ fontWeight: 'bold', fontSize: '1.2rem', color: '#ef4444', marginBottom: '0.5rem' }}>Danger Zone: Delete Account</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '1rem', lineHeight: '1.5' }}>
+              Once you delete your store, all your uploaded products, pending orders, and store profile will be permanently wiped from the system. You can register again with the same email in the future if you decide to pivot businesses.
+            </p>
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', color: '#ef4444', marginBottom: '0.3rem', fontWeight: 'bold' }}>
+                Type <span style={{ textDecoration: 'underline' }}>{vendorProfile?.handle}</span> to confirm deletion:
+              </label>
+              <input 
+                className="input" 
+                style={{ width: '100%', borderColor: 'rgba(239, 68, 68, 0.4)' }} 
+                placeholder={vendorProfile?.handle || 'store handle'}
+                value={deleteConfirmHandle} 
+                onChange={(e) => setDeleteConfirmHandle(e.target.value)} 
+              />
+            </div>
+            <button 
+              type="button" 
+              onClick={handleDeleteAccount}
+              disabled={deletingAccount || deleteConfirmHandle !== vendorProfile?.handle} 
+              style={{ 
+                padding: '0.6rem 1.5rem', 
+                borderRadius: '50px', 
+                border: 'none', 
+                backgroundColor: deleteConfirmHandle === vendorProfile?.handle ? '#ef4444' : 'rgba(239, 68, 68, 0.2)', 
+                color: 'white', 
+                fontWeight: 'bold', 
+                cursor: deleteConfirmHandle === vendorProfile?.handle ? 'pointer' : 'not-allowed',
+                transition: 'all 0.2s'
+              }}
+            >
+              {deletingAccount ? 'Deleting...' : 'Delete Store & Account'}
+            </button>
           </div>
         </div>
       )}
