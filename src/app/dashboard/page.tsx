@@ -106,7 +106,7 @@ export default function DashboardPage() {
     const { data, error } = await supabase
       .from('vendors')
       .insert([
-        { id: user.id, handle: handle.toLowerCase(), store_name: storeName, phone_number: phone }
+        { id: user.id, handle: handle.trim().toLowerCase(), store_name: storeName, phone_number: phone }
       ])
       .select()
       .single();

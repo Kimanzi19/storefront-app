@@ -25,7 +25,7 @@ export async function PUT(request: Request) {
 
     const { error } = await supabaseAdmin
       .from('vendors')
-      .update({ store_name, phone_number, handle: handle.toLowerCase() })
+      .update({ store_name, phone_number, handle: handle.trim().toLowerCase() })
       .eq('id', vendor_id);
 
     if (error) throw error;
