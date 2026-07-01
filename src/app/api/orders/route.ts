@@ -35,11 +35,25 @@ export async function POST(request: Request) {
     
     const { data: dbProducts, error: productsError } = await supabase
       .from('products')
-      .select('id, price, variants')
+      .select('id, price, min_order_quantity, variants')
       .in('id', productIds);
 
     if (productsError || !dbProducts) {
       throw new Error('Failed to fetch products for price verification');
+    }
+
+    // Validate Minimum Order Quantities
+    for (const item of items_json) {
+      const dbProduct = dbProducts.find(p => p.id === item.product.id);
+      if (dbProduct) {
+        const moq = dbProduct.min_order_quantity || 1;
+        if (item.quantity < moq) {
+          return NextResponse.json({ 
+            success: false, 
+            error: `Minimum order quantity for item ${item.product.id} is ${moq}` 
+          }, { status: 400 });
+        }
+      }
     }
 
     // 3. Recalculate true price

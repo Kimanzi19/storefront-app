@@ -40,6 +40,7 @@ export default function DashboardPage() {
   const [newCategory, setNewCategory] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [newImages, setNewImages] = useState<File[]>([]);
+  const [newMinQuantity, setNewMinQuantity] = useState('1');
   const [uploading, setUploading] = useState(false);
 
   // Structured Variants
@@ -209,7 +210,8 @@ export default function DashboardPage() {
           description: newDescription,
           image_urls: imageUrls,
           variants: formattedVariants,
-          category: newCategory
+          category: newCategory,
+          min_order_quantity: parseInt(newMinQuantity) || 1
         }
       ]);
       
@@ -221,6 +223,7 @@ export default function DashboardPage() {
       setNewCategory('');
       setNewDescription('');
       setNewImages([]);
+      setNewMinQuantity('1');
       setVariants([]);
       setCustomInputs({});
       const fileInput = document.getElementById('product-image-upload') as HTMLInputElement;
@@ -353,6 +356,7 @@ export default function DashboardPage() {
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
             <input className="input" style={{ flex: '1 1 200px' }} placeholder="Product Title" required value={newTitle} onChange={(e) => setNewTitle(e.target.value)} />
             <input type="number" className="input" style={{ flex: '0 1 100px' }} placeholder="Price (KES)" required value={newPrice} onChange={(e) => setNewPrice(e.target.value)} />
+            <input type="number" min="1" className="input" style={{ flex: '0 1 140px' }} placeholder="Min. Order Qty" value={newMinQuantity} onChange={(e) => setNewMinQuantity(e.target.value)} title="Minimum order quantity (defaults to 1)" />
           </div>
           
           <div>
@@ -558,6 +562,11 @@ export default function DashboardPage() {
                 <div style={{ display: 'inline-block', fontSize: '0.7rem', backgroundColor: 'rgba(100, 108, 255, 0.1)', color: 'var(--primary)', padding: '0.1rem 0.4rem', borderRadius: '4px', marginBottom: '0.25rem', marginTop: '0.25rem' }}>{p.category}</div>
               )}
               <div style={{ color: 'var(--text-muted)' }}>{p.price.toLocaleString()} KES</div>
+              {p.min_order_quantity && p.min_order_quantity > 1 && (
+                <div style={{ display: 'inline-block', fontSize: '0.75rem', backgroundColor: 'rgba(234, 179, 8, 0.15)', color: '#eab308', padding: '0.1rem 0.5rem', borderRadius: '50px', marginTop: '0.4rem', fontWeight: 'bold' }}>
+                  Min. Order: {p.min_order_quantity} pcs
+                </div>
+              )}
               {p.variants && p.variants.length > 0 && (
                 <div style={{ fontSize: '0.75rem', color: 'var(--primary)', marginTop: '0.25rem' }}>
                   {p.variants.length} variant option(s)

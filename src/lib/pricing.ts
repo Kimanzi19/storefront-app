@@ -11,6 +11,7 @@ export interface Variant {
 export interface DBProduct {
   id: string;
   price: number;
+  min_order_quantity?: number;
   variants?: Variant[];
 }
 

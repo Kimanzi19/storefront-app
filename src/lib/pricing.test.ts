@@ -103,4 +103,15 @@ describe('calculateCartTotal', () => {
     // Only prod-1 is calculated
     expect(total).toBe(200);
   });
+
+  it('calculates total correctly for item with min_order_quantity', () => {
+    const productsWithMOQ: any[] = [
+      { id: 'prod-samosa', price: 50, min_order_quantity: 10, variants: [] }
+    ];
+    const cart: CartItem[] = [
+      { product: { id: 'prod-samosa' }, quantity: 15, selectedVariants: {} }
+    ];
+    const total = calculateCartTotal(cart, productsWithMOQ);
+    expect(total).toBe(750); // 15 * 50
+  });
 });

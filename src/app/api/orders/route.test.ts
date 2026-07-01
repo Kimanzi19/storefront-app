@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { POST } from './route';
+import { supabase } from '@/lib/supabase';
 
 // Mock the DB clients
 vi.mock('@/lib/supabase', () => ({
@@ -79,5 +80,34 @@ describe('POST /api/orders', () => {
     const insertArgs = mockInsert.mock.calls[0][0];
     expect(insertArgs[0].total_price).toBe(100);
     expect(insertArgs[0].total_price).not.toBe(50);
+  });
+
+  it('rejects order if any item quantity is below product min_order_quantity (HTTP 400)', async () => {
+    // Override select mock for this test to return product with MOQ = 10
+    vi.mocked(vi.mocked(vi.mocked(supabase.from()).select()).in).mockResolvedValueOnce({
+      data: [
+        { id: '770e8400-e29b-41d4-a716-446655440000', price: 50, min_order_quantity: 10, variants: [] }
+      ],
+      error: null
+    } as any);
+
+    const request = new NextRequest('http://localhost/api/orders', {
+      method: 'POST',
+      body: JSON.stringify({
+        vendor_id: '550e8400-e29b-41d4-a716-446655440000',
+        customer_name: 'John Doe',
+        delivery_location: 'Nairobi',
+        total_price: 250, 
+        items_json: [
+          { product: { id: '770e8400-e29b-41d4-a716-446655440000' }, quantity: 5, selectedVariants: {} } // 5 is less than MOQ of 10!
+        ]
+      })
+    });
+
+    const response = await POST(request);
+    expect(response.status).toBe(400);
+    const data = await response.json();
+    expect(data.success).toBe(false);
+    expect(data.error).toContain('Minimum order quantity');
   });
 });

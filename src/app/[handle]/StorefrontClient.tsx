@@ -19,6 +19,7 @@ interface Product {
   image_urls: string[];
   variants: Variant[];
   category?: string;
+  min_order_quantity?: number;
 }
 
 interface CartItem {
@@ -162,7 +163,8 @@ export default function StorefrontClient({ vendor, initialProducts }: { vendor: 
         newCart[existingItemIndex].quantity += 1;
         return newCart;
       } else {
-        return [...prev, { product: selectedProduct, quantity: 1, selectedVariants: activeVariants }];
+        const initialQty = selectedProduct.min_order_quantity || 1;
+        return [...prev, { product: selectedProduct, quantity: initialQty, selectedVariants: activeVariants }];
       }
     });
     
@@ -172,8 +174,9 @@ export default function StorefrontClient({ vendor, initialProducts }: { vendor: 
   const updateQuantity = (index: number, delta: number) => {
     setCart(prev => {
       const newCart = [...prev];
+      const minQty = newCart[index].product.min_order_quantity || 1;
       newCart[index].quantity += delta;
-      if (newCart[index].quantity <= 0) {
+      if (newCart[index].quantity < minQty) {
         newCart.splice(index, 1);
       }
       return newCart;
@@ -312,7 +315,10 @@ export default function StorefrontClient({ vendor, initialProducts }: { vendor: 
             </div>
             <h3 style={{ fontWeight: '600', fontSize: '0.9rem', marginBottom: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.title}</h3>
             {p.category && (
-              <div style={{ display: 'inline-block', fontSize: '0.65rem', backgroundColor: 'rgba(100, 108, 255, 0.1)', color: 'var(--primary)', padding: '0.1rem 0.3rem', borderRadius: '4px', marginBottom: '0.25rem' }}>{p.category}</div>
+              <div style={{ display: 'inline-block', fontSize: '0.65rem', backgroundColor: 'rgba(100, 108, 255, 0.1)', color: 'var(--primary)', padding: '0.1rem 0.3rem', borderRadius: '4px', marginBottom: '0.25rem', marginRight: '0.25rem' }}>{p.category}</div>
+            )}
+            {p.min_order_quantity && p.min_order_quantity > 1 && (
+              <div style={{ display: 'inline-block', fontSize: '0.65rem', backgroundColor: 'rgba(234, 179, 8, 0.15)', color: '#eab308', padding: '0.1rem 0.3rem', borderRadius: '4px', marginBottom: '0.25rem', fontWeight: 'bold' }}>Min. {p.min_order_quantity} pcs</div>
             )}
             <p style={{ color: 'var(--primary)', fontWeight: 'bold' }}>{p.price.toLocaleString()} KES</p>
           </motion.div>
@@ -336,19 +342,20 @@ export default function StorefrontClient({ vendor, initialProducts }: { vendor: 
             right: '1.5rem',
             maxWidth: '400px',
             margin: '0 auto',
-            borderRadius: '50px',
             padding: '1rem',
-            boxShadow: '0 10px 25px rgba(100, 108, 255, 0.4)',
-            zIndex: 40,
+            borderRadius: '50px',
             display: 'flex',
-            justifyContent: 'center',
+            justifyContent: 'space-between',
             alignItems: 'center',
-            fontSize: '1.1rem',
-            fontWeight: 'bold'
+            boxShadow: '0 10px 25px rgba(100, 108, 255, 0.4)',
+            zIndex: 40
           }}
         >
-          <ShoppingBag style={{ marginRight: '0.5rem' }} />
-          View Cart ({cartCount})
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <ShoppingBag />
+            <span>View Order ({cartCount} {cartCount === 1 ? 'item' : 'items'})</span>
+          </div>
+          <span style={{ fontWeight: 'bold' }}>{cartTotal.toLocaleString()} KES</span>
         </motion.button>
       )}
 
@@ -361,18 +368,18 @@ export default function StorefrontClient({ vendor, initialProducts }: { vendor: 
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={closeProductModal}
-              style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', zIndex: 50 }}
+              style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 50, backdropFilter: 'blur(5px)' }}
             />
             <motion.div
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               drag="y"
               dragConstraints={{ top: 0 }}
               dragElastic={0.2}
               onDragEnd={(e, { offset, velocity }) => {
-                if (offset.y > 100 || velocity.y > 500) {
+                if (offset.y > 150 || velocity.y > 500) {
                   closeProductModal();
                 }
               }}
@@ -388,7 +395,7 @@ export default function StorefrontClient({ vendor, initialProducts }: { vendor: 
                 borderBottomRightRadius: 0,
                 padding: '1.5rem',
                 zIndex: 51,
-                touchAction: 'pan-y' // Improves scrolling inside draggable area
+                touchAction: 'pan-y'
               }}
             >
               <div style={{ width: '40px', height: '5px', backgroundColor: 'var(--border)', borderRadius: '10px', margin: '0 auto 1.5rem' }} />
@@ -442,7 +449,14 @@ export default function StorefrontClient({ vendor, initialProducts }: { vendor: 
               </div>
 
               <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>{selectedProduct.title}</h3>
-              <p style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '1.25rem', marginBottom: '1rem' }}>{getCurrentDisplayPrice().toLocaleString()} KES</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                <p style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '1.25rem', margin: 0 }}>{getCurrentDisplayPrice().toLocaleString()} KES</p>
+                {selectedProduct.min_order_quantity && selectedProduct.min_order_quantity > 1 && (
+                  <span style={{ fontSize: '0.8rem', backgroundColor: 'rgba(234, 179, 8, 0.15)', color: '#eab308', padding: '0.2rem 0.6rem', borderRadius: '50px', fontWeight: 'bold' }}>
+                    Min. Order: {selectedProduct.min_order_quantity} pcs
+                  </span>
+                )}
+              </div>
               
               {selectedProduct.description && (
                 <p style={{ color: 'var(--text-muted)', lineHeight: '1.5', marginBottom: '1.5rem', whiteSpace: 'pre-wrap' }}>
